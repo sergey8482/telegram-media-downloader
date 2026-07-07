@@ -1,0 +1,13 @@
+.env
+.venv/
+sessions/
+downloads/
+*.session
+*.session-journal
+__pycache__/
+*.pyc
+*.log
+*.err
+chats.txt
+telegram_login_qr.png
+qr_login.*
