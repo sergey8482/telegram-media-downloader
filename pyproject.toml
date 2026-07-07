@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "telegram-media-downloader"
+version = "0.2.0"
+description = "Download media from Telegram chats with date filters, resume support and atomic writes."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+    { name = "Sergey" }
+]
+dependencies = [
+    "telethon>=1.43.0",
+    "python-dotenv>=1.0.1",
+    "qrcode[pil]>=8.0",
+    "cryptg>=0.5.0",
+    "tqdm>=4.66.0",
+    "PySocks>=1.7.1",
+]
+
+[project.scripts]
+tg-media-dl = "tg_media_dl.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["tg_media_dl*"]

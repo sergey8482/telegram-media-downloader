@@ -4,10 +4,14 @@ Python-скрипт для скачивания фото и видео из Tele
 
 Поддерживает:
 
-- скачивание фото, видео или обоих типов медиа;
+- скачивание фото, видео, аудио, voice, video note и документов;
 - фильтр по датам `--since` и `--until`;
 - сохранение исходных имен файлов, если Telegram их отдаёт;
 - отдельные папки `photos` / `videos` или плоскую выгрузку через `--flat-output`;
+- атомарную запись через `.part` файлы;
+- инкрементальную выгрузку через SQLite и `--resume`;
+- параллельное скачивание через `--concurrency`;
+- SOCKS5 proxy через `--proxy`;
 - вход по коду Telegram или QR-коду.
 
 ## Установка
@@ -19,6 +23,13 @@ Python-скрипт для скачивания фото и видео из Tele
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
+```
+
+Или установить как пакет с console script:
+
+```powershell
+pip install -e .
+tg-media-dl --help
 ```
 
 3. Создайте `.env`:
@@ -39,48 +50,68 @@ DOWNLOAD_DIR=downloads/telegram_media
 SESSION_NAME=telegram_media
 ```
 
+`TELEGRAM_GROUP_TITLE` можно не задавать, но тогда передавайте `--chat`.
+
 ## Использование
 
 Проверить, какие чаты видит аккаунт:
 
 ```powershell
-python download_telegram_family_album.py --list-chats
+tg-media-dl --list-chats
 ```
 
 Скачать все фото и видео из чата, указанного в `.env`:
 
 ```powershell
-python download_telegram_family_album.py
+tg-media-dl --chat "My Telegram Group"
 ```
 
 Скачать только фото:
 
 ```powershell
-python download_telegram_family_album.py --types photos
+tg-media-dl --chat "My Telegram Group" --types photos
 ```
 
 Скачать только видео:
 
 ```powershell
-python download_telegram_family_album.py --types videos
+tg-media-dl --chat "My Telegram Group" --types videos
 ```
 
 Скачать медиа за период:
 
 ```powershell
-python download_telegram_family_album.py --since 2026-07-04 --until 2026-07-07
+tg-media-dl --chat "My Telegram Group" --since 2026-07-04 --until 2026-07-07
 ```
 
 Скачать в конкретную папку без подпапок `photos` / `videos`:
 
 ```powershell
-python download_telegram_family_album.py --since 2026-07-04 --output "C:\Path\To\Folder" --flat-output
+tg-media-dl --chat "My Telegram Group" --since 2026-07-04 --output "C:\Path\To\Folder" --flat-output
+```
+
+Продолжить только с новых сообщений, записанных после последнего `message_id` в SQLite:
+
+```powershell
+tg-media-dl --chat "My Telegram Group" --resume
+```
+
+Скачать параллельно в 5 потоков:
+
+```powershell
+tg-media-dl --chat "My Telegram Group" --concurrency 5
+```
+
+Использовать SOCKS5 proxy:
+
+```powershell
+tg-media-dl --chat "My Telegram Group" --proxy "socks5://user:pass@host:1080"
 ```
 
 Посмотреть, что будет скачано, без сохранения файлов:
 
 ```powershell
-python download_telegram_family_album.py --dry-run
+tg-media-dl --chat "My Telegram Group" --dry-run
 ```
 
 ## Первый вход
@@ -91,14 +122,14 @@ python download_telegram_family_album.py --dry-run
 
 ```powershell
 $env:TELEGRAM_LOGIN_CODE="12345"
-python download_telegram_family_album.py --list-chats
+tg-media-dl --list-chats
 Remove-Item Env:\TELEGRAM_LOGIN_CODE
 ```
 
 Вход по QR-коду:
 
 ```powershell
-python download_telegram_family_album.py --list-chats --qr-login
+tg-media-dl --list-chats --qr-login
 ```
 
 Скрипт сохранит `telegram_login_qr.png`. Откройте Telegram на телефоне: `Настройки -> Устройства -> Подключить устройство`, затем отсканируйте QR-код.
@@ -108,3 +139,10 @@ python download_telegram_family_album.py --list-chats --qr-login
 - Скрипт скачивает только то, что доступно вашему Telegram-аккаунту.
 - Не публикуйте `.env`, `sessions/`, скачанные медиа и логи.
 - `.gitignore` уже исключает секреты, сессии, медиа, QR-коды и временные файлы.
+
+## Docker
+
+```powershell
+docker build -t telegram-media-downloader .
+docker run --rm -it --env-file .env -v "${PWD}\downloads:/app/downloads" telegram-media-downloader --chat "My Telegram Group"
+```

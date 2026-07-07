@@ -6,6 +6,8 @@ downloads/
 *.session-journal
 __pycache__/
 *.pyc
+*.db
+*.db-journal
 *.log
 *.err
 chats.txt
