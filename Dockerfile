@@ -9,7 +9,7 @@ COPY requirements.txt pyproject.toml README.md ./
 COPY tg_media_dl ./tg_media_dl
 COPY download_telegram_family_album.py ./
 
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir .
 
 ENTRYPOINT ["tg-media-dl"]
 CMD ["--help"]

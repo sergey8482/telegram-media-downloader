@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from telethon import TelegramClient
-from telethon.errors import FloodWaitError
+from telethon.errors import FloodWaitError, RPCError
 from tqdm import tqdm
 
 from .auth import start_client
@@ -88,7 +88,7 @@ async def find_chat(client: TelegramClient, title: str) -> Any:
             exact_matches.append(dialog)
         elif name.casefold() == title.casefold():
             case_matches.append(dialog)
-        elif title.casefold() in name.casefold() or name.casefold() in title.casefold():
+        elif title.casefold() in name.casefold():
             partial_matches.append(dialog)
 
     matches = exact_matches or case_matches
@@ -200,14 +200,14 @@ async def download_one(
             kind,
             config.flat_output,
         )
-        if store.is_downloaded(message.id) and not config.overwrite:
+        if store.is_downloaded(chat_id, message.id) and not config.overwrite:
             stats.skipped += 1
             LOGGER.info("Skip recorded message %s: %s", message.id, target_path)
             return
         if target_path.exists() and not config.overwrite:
             stats.skipped += 1
             LOGGER.info("Skip existing: %s", target_path)
-            if not store.is_downloaded(message.id):
+            if not store.is_downloaded(chat_id, message.id):
                 store.record_download(
                     message_id=message.id,
                     chat_id=chat_id,
@@ -232,9 +232,9 @@ async def download_one(
                 )
             else:
                 stats.failed += 1
-        except (asyncio.TimeoutError, OSError) as exc:
+        except (asyncio.TimeoutError, OSError, RPCError) as exc:
             stats.failed += 1
-            LOGGER.error("Network error for message %s: %s", message.id, exc)
+            LOGGER.error("Download error for message %s: %s", message.id, exc)
 
 
 def message_in_date_range(message: Any, config: AppConfig) -> bool:
@@ -283,7 +283,7 @@ async def download_media(config: AppConfig) -> None:
             LOGGER.info("Until: %s", config.until.astimezone(local_timezone()).isoformat())
 
         with DownloadStore(config.db_path) as store:
-            min_id = store.last_message_id() if config.resume else None
+            min_id = store.last_message_id(chat_id) if config.resume else None
             if min_id:
                 LOGGER.info("Resume enabled; requesting messages with min_id=%s", min_id)
 

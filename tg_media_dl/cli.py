@@ -6,11 +6,9 @@ import argparse
 import asyncio
 import logging
 import sys
-from pathlib import Path
 
 from .config import AppConfig, load_config
 from .downloader import download_media, list_chats
-
 
 MEDIA_TYPES = (
     "all",
@@ -103,11 +101,19 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--code",
-        help="One-time Telegram login code. Prefer TELEGRAM_LOGIN_CODE.",
+        help="One-time Telegram login code. Warning: CLI args can be visible in process lists.",
     )
     parser.add_argument(
         "--password",
-        help="Telegram 2FA password. Prefer interactive input when possible.",
+        help="Telegram 2FA password. Warning: prefer interactive input or keyring.",
+    )
+    parser.add_argument(
+        "--password-keyring-service",
+        help="Read Telegram 2FA password from this keyring service.",
+    )
+    parser.add_argument(
+        "--password-keyring-username",
+        help="Read Telegram 2FA password for this keyring username.",
     )
     parser.add_argument(
         "--force-sms",

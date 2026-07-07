@@ -4,3 +4,4 @@ qrcode[pil]>=8.0
 cryptg>=0.5.0
 tqdm>=4.66.0
 PySocks>=1.7.1
+keyring>=25.0.0

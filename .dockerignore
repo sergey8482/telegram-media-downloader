@@ -1,12 +1,12 @@
 .env
 .venv/
+.git/
+__pycache__/
+*.pyc
 sessions/
 downloads/
 *.session
 *.session-journal
-__pycache__/
-*.pyc
-*.egg-info/
 *.db
 *.db-journal
 *.log

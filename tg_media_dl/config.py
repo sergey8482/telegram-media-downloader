@@ -3,14 +3,13 @@
 from __future__ import annotations
 
 import argparse
+import os
 from dataclasses import dataclass
 from datetime import datetime, time, timezone, tzinfo
-import os
 from pathlib import Path
-from urllib.parse import urlparse, unquote
+from urllib.parse import unquote, urlparse
 
 from dotenv import load_dotenv
-
 
 DEFAULT_DOWNLOAD_DIR = "downloads/telegram_media"
 
@@ -128,6 +127,24 @@ def parse_proxy(proxy_url: str | None) -> object | None:
     return (socks.SOCKS5, parsed.hostname, parsed.port, True, username, password)
 
 
+def load_keyring_password(service: str | None, username: str | None) -> str | None:
+    """Load a Telegram 2FA password from the OS keyring when configured."""
+    if not service and not username:
+        return None
+    if not service or not username:
+        raise SystemExit(
+            "Both TELEGRAM_2FA_KEYRING_SERVICE and "
+            "TELEGRAM_2FA_KEYRING_USERNAME are required."
+        )
+
+    try:
+        import keyring
+    except ImportError as exc:
+        raise SystemExit("Install keyring to use keyring-based 2FA passwords.") from exc
+
+    return keyring.get_password(service, username)
+
+
 def load_config(args: argparse.Namespace) -> AppConfig:
     """Load configuration from argparse and environment variables."""
     load_dotenv(args.env_file)
@@ -179,7 +196,13 @@ def load_config(args: argparse.Namespace) -> AppConfig:
         db_path=db_path,
         proxy=parse_proxy(args.proxy or os.getenv("TELEGRAM_PROXY")),
         login_code=args.code or os.getenv("TELEGRAM_LOGIN_CODE") or None,
-        login_password=args.password or os.getenv("TELEGRAM_2FA_PASSWORD") or None,
+        login_password=args.password
+        or load_keyring_password(
+            args.password_keyring_service
+            or os.getenv("TELEGRAM_2FA_KEYRING_SERVICE"),
+            args.password_keyring_username
+            or os.getenv("TELEGRAM_2FA_KEYRING_USERNAME"),
+        ),
         force_sms=args.force_sms or env_bool("TELEGRAM_FORCE_SMS"),
         qr_login=args.qr_login,
         qr_path=Path(args.qr_path).resolve(),

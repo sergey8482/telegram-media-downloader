@@ -5,9 +5,9 @@ from __future__ import annotations
 import asyncio
 import getpass
 import logging
-from pathlib import Path
 import sys
-from typing import Callable
+from collections.abc import Callable
+from pathlib import Path
 
 from telethon import TelegramClient
 from telethon.errors import SessionPasswordNeededError
@@ -86,14 +86,18 @@ async def sign_in_with_qr(
 
     try:
         await qr_login.wait(timeout=timeout)
-    except SessionPasswordNeededError:
+    except SessionPasswordNeededError as exc:
         if not password:
             raise SystemExit(
                 "QR login succeeded, but Telegram 2FA password is required."
-            )
+            ) from exc
         await client.sign_in(password=password)
     except asyncio.TimeoutError as exc:
         raise SystemExit("QR login timed out. Run again for a fresh QR code.") from exc
+    finally:
+        if qr_path.exists():
+            qr_path.unlink()
+            LOGGER.info("QR login image removed: %s", qr_path)
 
 
 async def start_client(
